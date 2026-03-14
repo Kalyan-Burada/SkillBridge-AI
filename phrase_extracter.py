@@ -42,6 +42,25 @@ _skill_embs:     object | None = None
 _non_skill_embs: object | None = None
 _np:             object | None = None
 
+
+def _load_spacy_model():
+    try:
+        return spacy.load("en_core_web_sm")
+    except OSError:
+        try:
+            import en_core_web_sm
+            return en_core_web_sm.load()
+        except ImportError:
+            try:
+                from spacy.cli import download
+                download("en_core_web_sm")
+                return spacy.load("en_core_web_sm")
+            except Exception as exc:
+                raise RuntimeError(
+                    "spaCy model 'en_core_web_sm' is required. "
+                    "Install it with: python -m spacy download en_core_web_sm"
+                ) from exc
+
 # ── Zero-shot anchor phrases ──────────────────────────────────────────────────
 # These describe the SEMANTIC CHARACTER of skills without naming any specific
 # skill, tool, technology, or domain — making the extractor domain-agnostic.
@@ -146,7 +165,7 @@ def _load() -> None:
 
     import numpy as np
     _np = np
-    _nlp = spacy.load("en_core_web_sm")
+    _nlp = _load_spacy_model()
 
     from sentence_transformers import SentenceTransformer
     _st_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
