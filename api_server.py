@@ -1,25 +1,21 @@
 """
 api_server.py  —  Career Copilot FastAPI backend.
-
 Start:
     python api_server.py
   or
     uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload
-
 All analysis logic lives in pipeline.py.
 Career advice logic lives in llm_client.py.
 """
 from __future__ import annotations
-
 import os
+import traceback
 from contextlib import asynccontextmanager
-from typing import List, Optional
-
+from typing import List, Optional, Union
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-
 from pipeline import run_analysis
 
 
@@ -64,7 +60,7 @@ app = FastAPI(
         "spaCy extraction + cosine similarity matching. "
         "Works for any job domain."
     ),
-    version="4.0.0",
+    version="5.0.0",
     lifespan=lifespan,
 )
 
@@ -77,10 +73,32 @@ app.add_middleware(
 
 
 # ── Response schema ───────────────────────────────────────────────────────────
+
 class SkillScore(BaseModel):
     best_score: float
     best_match: Optional[str]
-    match_pass: int   # 1=exact 2=overlap 3=cosine 4=abbrev 0=missing
+    # match_pass is a string label, not an int.
+    # Values: "exact" | "overlap" | "cosine" | "abbrev" | "implied" | "missing"
+    # (Previously typed as int — that crashed when ImplicationEngine returned
+    # string labels like "implied-A". Fixed to Union[str, int] with normalisation.)
+    match_pass: Union[str, int]
+
+    @classmethod
+    def _normalise_pass(cls, raw_pass) -> str:
+        """Convert any pass value (int or string) to a human-readable label."""
+        _INT_LABELS = {
+            0: "missing",
+            1: "exact",
+            2: "overlap",
+            3: "cosine",
+            4: "abbrev",
+        }
+        if isinstance(raw_pass, int):
+            return _INT_LABELS.get(raw_pass, str(raw_pass))
+        # String passes from ImplicationEngine: "implied-A", "implied-B", "implied-C"
+        if isinstance(raw_pass, str) and raw_pass.startswith("implied"):
+            return "implied"
+        return str(raw_pass)
 
 
 class AnalysisResponse(BaseModel):
@@ -97,15 +115,15 @@ class AnalysisResponse(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 @app.get("/")
 async def root():
-    # Return the frontend UI index.html if it exists
     if os.path.exists("index.html"):
         return FileResponse("index.html")
     return {
         "status":  "healthy",
         "service": "Career Copilot API (offline)",
-        "version": "4.0.0",
+        "version": "5.0.0",
         "note":    "Works for any job domain — no API key required",
     }
 
@@ -127,31 +145,32 @@ async def analyze(
 ):
     """
     Full skill gap analysis pipeline.
-
     1. PDF → text            (pdfplumber)
     2. Text → skill phrases  (spaCy + zero-shot SentenceTransformer)
     3. Skills → embeddings   (all-MiniLM-L6-v2)
     4. Cosine similarity matrix
-    5. 4-pass classification  → matched / missing
+    5. 7-pass classification  → matched / missing
     6. Career advice          (Ollama or template engine)
-
     Works for any industry and job role — no hardcoded skill dictionaries.
     """
     pdf_bytes = await resume.read()
-
     try:
         result = run_analysis(pdf_bytes, job_description)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        # Log the full traceback server-side for debugging.
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")
 
-    # Reshape per_skill_scores into Pydantic-safe dicts
+    # Reshape per_skill_scores into Pydantic-safe dicts.
+    # IMPORTANT: normalise match_pass to a string so Pydantic never tries
+    # to coerce "implied-A" → int (which caused the original crash).
     pss = {
         skill: SkillScore(
             best_score=info["best_score"],
             best_match=info.get("best_match"),
-            match_pass=info.get("pass", 0),
+            match_pass=SkillScore._normalise_pass(info.get("pass", 0)),
         )
         for skill, info in result["per_skill_scores"].items()
     }
