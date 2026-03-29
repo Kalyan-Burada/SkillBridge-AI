@@ -84,30 +84,6 @@ Execute the pipeline:
 ```bash
 streamlit run app.py
 ```
-Upload an enterprise resume payload, paste your target process requirements (JD), and watch the agents negotiate an outcome in real-time on your dashboard.
-# 🚀 Career Copilot: AI Skill Gap Analyzer
-
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B.svg)
-![Offline First](https://img.shields.io/badge/Privacy-Offline_First-success.svg)
-
-**Career Copilot** is a privacy-focused, offline-first tool designed to bridge the gap between a candidate's Resume and a target Job Description (JD). It leverages local Natural Language Processing (NLP) and vector embeddings to extract skills, perform semantic matching, and generate actionable career advice—all without requiring paid external APIs.
-
----
-
-
-## 🛠️ Architecture & Tech Stack
-
-* **Frontend**: Streamlit (`app.py`)
-* **Core NLP**: `spaCy` for text parsing and phrase extraction.
-* **Embeddings**: `SentenceTransformers` for creating dense vector representations of skills.
-* **Matching**: Cosine similarity calculations for intelligent abbreviation handling and skill alignment.
-* **LLM Engine**: `llm_client.py` orchestrates interaction with Ollama or falls back to standard heuristic templates.
-
----
-
-
-## 📁 Project Structure
 ## 📁 Project Structure
 
 ```text
