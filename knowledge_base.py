@@ -230,7 +230,7 @@ SKILL_KNOWLEDGE_BASE: dict = {
 
     # ── Software: Cloud / DevOps ──────────────────────────────────────────────
     "aws": {
-        "description": "Amazon Web Services is the leading cloud platform offering compute, storage, databases, and AI/ML services.",
+        "description": "Amazon Web Services is the leading cloud platform (and cloud platforms) offering cloud computing, storage, databases, and AI/ML services.",
         "learning_resources": [
             "Study for AWS Solutions Architect Associate certification",
             "Master core services: EC2, S3, RDS, Lambda, API Gateway, CloudFront",
@@ -246,7 +246,7 @@ SKILL_KNOWLEDGE_BASE: dict = {
         "estimated_time": "4-6 months for associate-level proficiency",
     },
     "microsoft azure": {
-        "description": "Microsoft Azure is a comprehensive cloud platform for building, deploying, and managing applications.",
+        "description": "Microsoft Azure is a comprehensive cloud platform (and cloud platforms) for building, deploying cloud computing and managing applications.",
         "learning_resources": [
             "Study for Azure Fundamentals (AZ-900) certification",
             "Master Azure App Service, Functions, SQL, Blob Storage",
@@ -374,7 +374,7 @@ SKILL_KNOWLEDGE_BASE: dict = {
         "estimated_time": "3-6 months for job-ready skills",
     },
     "power bi": {
-        "description": "Power BI is Microsoft's business analytics tool for interactive dashboards and data visualisations.",
+        "description": "Power BI is Microsoft's business analytics tool for interactive dashboards, visualizations, and data visualisations.",
         "learning_resources": [
             "Complete the PL-300 (Power BI Data Analyst) certification path",
             "Master DAX formulas for calculated columns and measures",
@@ -390,7 +390,7 @@ SKILL_KNOWLEDGE_BASE: dict = {
         "estimated_time": "3-4 months for PL-300 readiness",
     },
     "tableau": {
-        "description": "Tableau is a leading data visualisation platform for interactive, shareable dashboards.",
+        "description": "Tableau is a leading data visualisation platform for interactive, shareable dashboards and visualizations.",
         "learning_resources": [
             "Study for Tableau Desktop Specialist or Certified Data Analyst",
             "Master calculated fields, LOD expressions, and table calculations",
@@ -746,6 +746,64 @@ SKILL_KNOWLEDGE_BASE: dict = {
         ],
         "career_paths": ["Compliance Analyst", "Risk Manager", "Regulatory Affairs Specialist", "Chief Compliance Officer"],
         "estimated_time": "4-8 months depending on regulation",
+    },
+
+    # ── Foundational Tools / Libraries ────────────────────────────────────────
+    "tensorflow": {
+        "description": "TensorFlow is an open-source framework for machine learning, artificial intelligence, and deep learning neural networks.",
+        "learning_resources": ["TensorFlow documentation", "Deeplearning.ai courses"],
+        "project_ideas": ["Train a computer vision model", "Build an NLP classifier"],
+        "career_paths": ["ML Engineer", "AI Researcher", "Data Scientist"],
+        "estimated_time": "3-6 months",
+    },
+    "pytorch": {
+        "description": "PyTorch is a popular machine learning framework for deep learning, artificial intelligence, and research.",
+        "learning_resources": ["PyTorch tutorials", "Fast.ai course"],
+        "project_ideas": ["Implement a GAN", "Fine-tune an LLM"],
+        "career_paths": ["AI Engineer", "ML Researcher"],
+        "estimated_time": "3-6 months",
+    },
+    "scikit-learn": {
+        "description": "Scikit-learn is a fundamental machine learning library in Python for regression, classification, and statistical modeling.",
+        "learning_resources": ["Scikit-learn documentation", "Kaggle ML courses"],
+        "project_ideas": ["Build a predictive model", "Perform clustering"],
+        "career_paths": ["Data Scientist", "Data Analyst"],
+        "estimated_time": "1-3 months",
+    },
+    "pandas": {
+        "description": "Pandas is a foundational data analysis and data manipulation library for Python data science workflows.",
+        "learning_resources": ["Pandas documentation", "DataCamp courses"],
+        "project_ideas": ["Clean a messy dataset", "Perform Exploratory Data Analysis (EDA)"],
+        "career_paths": ["Data Analyst", "Data Engineer", "Data Scientist"],
+        "estimated_time": "1-2 months",
+    },
+    "gcp": {
+        "description": "Google Cloud Platform (GCP) provides scalable cloud platforms, cloud computing, data analytics, and machine learning infrastructure.",
+        "learning_resources": ["GCP Cloud Architect path", "Coursera GCP specializations"],
+        "project_ideas": ["Deploy a serverless app", "Build a BigQuery pipeline"],
+        "career_paths": ["Cloud Engineer", "Data Engineer"],
+        "estimated_time": "3-6 months",
+    },
+    "databases": {
+        "description": "Databases are foundational systems for structured data storage, retrieval, backend management, and full-stack development.",
+        "learning_resources": ["SQL fundamentals", "Database design principles"],
+        "project_ideas": ["Design a relational schema", "Optimize query performance"],
+        "career_paths": ["Backend Engineer", "Database Administrator", "Data Engineer"],
+        "estimated_time": "2-4 months",
+    },
+    "agile": {
+        "description": "Agile is an iterative project management and software development methodology focusing on cross-functional teams and fast delivery.",
+        "learning_resources": ["Scrum Guide", "Agile Alliance resources"],
+        "project_ideas": ["Run a sprint cycle", "Manage backlog in Jira"],
+        "career_paths": ["Product Manager", "Scrum Master", "Software Engineer"],
+        "estimated_time": "1 month",
+    },
+    "healthcare": {
+        "description": "Healthcare domain expertise involves medical devices, patient outcomes, clinical operations, and regulatory compliance.",
+        "learning_resources": ["Healthcare IT certifications", "HIPAA/compliance training"],
+        "project_ideas": ["Analyze patient outcome data", "Integrate electronic health records (EHR)"],
+        "career_paths": ["Health Informatics", "Medical Product Manager", "Healthcare Analyst"],
+        "estimated_time": "6-12 months",
     },
 
     # ── Default (universal fallback) ──────────────────────────────────────────

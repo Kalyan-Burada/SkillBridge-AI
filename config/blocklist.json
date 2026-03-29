@@ -1,0 +1,20 @@
+{
+    "blocklist": [
+        ["react", "angular"],
+        ["react", "vue"],
+        ["angular", "vue"],
+        ["docker", "kubernetes"],
+        ["sql", "nosql"],
+        ["sql", "mongodb"],
+        ["mysql", "postgresql"],
+        ["tensorflow", "pytorch"],
+        ["supervised", "unsupervised"],
+        ["frontend", "backend"],
+        ["ios", "android"],
+        ["swift", "kotlin"],
+        ["java", "javascript"],
+        ["javascript", "typescript"],
+        ["mysql", "nosql"],
+        ["postgresql", "nosql"]
+    ]
+}
