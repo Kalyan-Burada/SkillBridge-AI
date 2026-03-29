@@ -1,0 +1,13 @@
+{
+    "cosine_threshold": 0.65,
+    "overlap_threshold": 0.70,
+    "gate_margin": -0.05,
+    "impl_desc_threshold": 0.42,
+    "impl_text_threshold": 0.42,
+    "impl_token_threshold": 0.60,
+    "window_sentences": 4,
+    "fast_track_threshold": 90.0,
+    "redirect_threshold": 40.0,
+    "max_compliance_retries": 2,
+    "agent_sla_budget_ms": 30000
+}

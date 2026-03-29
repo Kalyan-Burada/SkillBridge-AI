@@ -1,4 +1,4 @@
-# Career Copilot — Python dependencies
+# SkillBridge-AI — Python dependencies
 # Install with:  pip install -r requirements.txt
 
 # ── Core NLP & ML ─────────────────────────────────────────────────────────────
@@ -8,20 +8,14 @@ numpy>=1.24.0,<3.0.0                 # matrix math / cosine similarity
 faiss-cpu>=1.7.4                     # FAISS vector index (RAG engine)
 
 # ── PDF parsing ───────────────────────────────────────────────────────────────
-pdfplumber>=0.10.0,<1.0.0            # text extraction from PDF resumes
+pdfplumber>=0.10.0,<1.0.0            # primary text extraction
+pytesseract>=0.3.10                  # OCR fallback text extraction
+pdf2image>=1.16.0                    # PDF to image conversion for OCR
 
-# ── Web frameworks ────────────────────────────────────────────────────────────
+# ── Web framework ─────────────────────────────────────────────────────────────
 streamlit>=1.30.0,<2.0.0             # Streamlit frontend (app.py)
-fastapi>=0.110.0,<1.0.0              # REST API backend (api_server.py)
-uvicorn[standard]>=0.27.0,<1.0.0    # ASGI server for FastAPI
-python-multipart>=0.0.9              # multipart form uploads in FastAPI
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 pandas>=2.0.0,<3.0.0                 # dataframe for similarity matrix display
-python-dotenv>=1.0.0                 # optional env var loading
 nltk>=3.8.0,<4.0.0                   # stopwords corpus
-
-# ── Optional: richer AI advice ────────────────────────────────────────────────
-# Ollama runs locally and is detected automatically — no pip package needed.
-# Install from: https://ollama.com
-# Then run: ollama pull llama3.2
+python-docx>=1.1.0                   # documentation export support

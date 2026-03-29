@@ -64,15 +64,32 @@ by pipeline.py. No extra dependencies.
 """
 from __future__ import annotations
 
+import os
+import json
 import re
 import numpy as np
 from typing import List, Dict, Optional, Tuple
 
-# ── Thresholds ─────────────────────────────────────────────────────────────
-IMPL_DESC_THRESHOLD:  float = 0.42  # KB description → JD skill (lowered from 0.52)
-IMPL_TEXT_THRESHOLD:  float = 0.45  # Raw text window (lowered from 0.60)
-IMPL_TOKEN_THRESHOLD: float = 0.60  # Pass D: token overlap in KB description
-WINDOW_SENTENCES:     int   = 4     # Wider window for more context
+# ── Config loader ──────────────────────────────────────────────────────────
+_CONFIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+
+def _load_json_cfg(filename: str, default=None):
+    path = os.path.join(_CONFIG_DIR, filename)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return default if default is not None else {}
+
+_thresholds_cfg = _load_json_cfg("thresholds.json", {})
+
+# ── Thresholds (loaded from config, fallback to defaults) ──────────────────
+IMPL_DESC_THRESHOLD:  float = _thresholds_cfg.get("impl_desc_threshold", 0.42)
+IMPL_TEXT_THRESHOLD:  float = _thresholds_cfg.get("impl_text_threshold", 0.45)
+IMPL_TOKEN_THRESHOLD: float = _thresholds_cfg.get("impl_token_threshold", 0.60)
+WINDOW_SENTENCES:     int   = _thresholds_cfg.get("window_sentences", 4)
 
 # ── Lazy model ref (shares the singleton from pipeline.py) ─────────────────
 _model = None
@@ -128,6 +145,14 @@ def _get_kb_description(skill: str) -> str:
         kb = get_skill_knowledge(skill)
         _kb_desc_cache[skill] = kb.get("description", "")
     return _kb_desc_cache[skill]
+
+# Default KB description — used to detect fallback entries that are too generic
+_DEFAULT_KB_DESC = "This is a professional skill relevant to the target role."
+
+def _has_real_kb_entry(skill: str) -> bool:
+    """Return True if this skill has a specific KB entry, not the generic default."""
+    desc = _get_kb_description(skill)
+    return bool(desc) and desc != _DEFAULT_KB_DESC
 
 
 # ── Core implication check ─────────────────────────────────────────────────
@@ -185,16 +210,17 @@ class ImplicationEngine:
         Check if any resume skill's KB description is semantically close
         to the JD skill phrase.
 
-        Example: JD="python", resume has "scikit-learn"
-          → "scikit-learn" KB desc: "Python machine learning library..."
-          → embedding of desc is close to embedding of "python"
-          → IMPLIED
+        IMPORTANT: Skip resume skills that only have the default KB entry —
+        the generic description matches everything and creates false positives.
         """
         jd_emb = self._skill_emb(jd_skill)
         best_score  = 0.0
         best_match: Optional[str] = None
 
         for rs in resume_skills:
+            # Skip skills with only the generic default KB description
+            if not _has_real_kb_entry(rs):
+                continue
             desc_emb = self._desc_emb(rs)
             score    = _cosine(jd_emb, desc_emb)
             if score > best_score:
@@ -212,11 +238,13 @@ class ImplicationEngine:
         Check if any resume skill phrase is semantically close to the
         JD skill's own KB description.
 
-        Example: JD="machine learning"
-          → its KB desc: "...algorithms... scikit-learn, gradient boosting..."
-          → resume has "scikit-learn" → close to that description
-          → IMPLIED
+        IMPORTANT: Skip if JD skill only has the default KB entry —
+        the generic description matches everything.
         """
+        # If the JD skill itself has no real KB entry, skip
+        if not _has_real_kb_entry(jd_skill):
+            return None
+
         jd_desc_emb = self._desc_emb(jd_skill)
         best_score  = 0.0
         best_match: Optional[str] = None
@@ -269,30 +297,32 @@ class ImplicationEngine:
     #   "machine" and "learning" both appear → token overlap ≥ 0.60 → IMPLIED
 
     def _pass_d(self, jd_skill: str, resume_skills: List[str]) -> Optional[str]:
-        jd_tokens = set(re.findall(r"[a-z0-9]+", jd_skill.lower()))
-        jd_tokens -= {"a", "an", "the", "and", "or", "for", "to", "of", "in", "with"}
+        from pipeline import _tokenize, _stem5
+        
+        jd_tokens = _tokenize(jd_skill)
         if not jd_tokens:
             return None
+        jd_stems = set(_stem5(t) for t in jd_tokens)
 
         for rs in resume_skills:
-            desc = _get_kb_description(rs).lower()
+            desc = _get_kb_description(rs)
             if not desc:
                 continue
-            desc_tokens = set(re.findall(r"[a-z0-9]+", desc))
-            overlap = len(jd_tokens & desc_tokens) / len(jd_tokens)
+            desc_stems = set(_stem5(t) for t in _tokenize(desc))
+            overlap = len(jd_stems & desc_stems) / len(jd_stems)
             if overlap >= IMPL_TOKEN_THRESHOLD:
                 return rs
 
         # Reverse: resume skill tokens inside JD's KB description
-        jd_desc = _get_kb_description(jd_skill).lower()
+        jd_desc = _get_kb_description(jd_skill)
         if jd_desc:
-            jd_desc_tokens = set(re.findall(r"[a-z0-9]+", jd_desc))
+            jd_desc_stems = set(_stem5(t) for t in _tokenize(jd_desc))
             for rs in resume_skills:
-                rs_tokens = set(re.findall(r"[a-z0-9]+", rs.lower()))
-                rs_tokens -= {"a", "an", "the", "and", "or", "for", "to", "of", "in"}
+                rs_tokens = _tokenize(rs)
                 if not rs_tokens:
                     continue
-                overlap = len(rs_tokens & jd_desc_tokens) / len(rs_tokens)
+                rs_stems = set(_stem5(t) for t in rs_tokens)
+                overlap = len(rs_stems & jd_desc_stems) / len(rs_stems)
                 if overlap >= IMPL_TOKEN_THRESHOLD:
                     return rs
 

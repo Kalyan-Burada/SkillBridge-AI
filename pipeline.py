@@ -43,6 +43,8 @@ Fully offline — no API keys, no internet at runtime.
 from __future__ import annotations
 import re
 import io
+import os
+import json
 from typing import List, Tuple, Dict
 import numpy as np
 
@@ -52,14 +54,32 @@ _model             = None
 _skill_gate_embs   = None
 _generic_gate_embs = None
 
-# ── Thresholds ─────────────────────────────────────────────────────────────────
-COSINE_THRESHOLD:  float = 0.65
-OVERLAP_THRESHOLD: float = 0.70
+# ── Config loader ──────────────────────────────────────────────────────────────
+_CONFIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+
+def _load_json(filename: str, default=None):
+    """Load a JSON config file; return default if missing."""
+    path = os.path.join(_CONFIG_DIR, filename)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return default if default is not None else {}
+
+_thresholds_cfg = _load_json("thresholds.json", {})
+
+# ── Thresholds (loaded from config, fallback to defaults) ─────────────────────
+COSINE_THRESHOLD:  float = _thresholds_cfg.get("cosine_threshold", 0.65)
+OVERLAP_THRESHOLD: float = _thresholds_cfg.get("overlap_threshold", 0.70)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SEMANTIC GATE ANCHORS
+# SEMANTIC GATE ANCHORS (loaded from config/anchors.json)
 # ─────────────────────────────────────────────────────────────────────────────
-_SKILL_ANCHORS: List[str] = [
+_anchors_cfg = _load_json("anchors.json", {})
+
+_SKILL_ANCHORS: List[str] = _anchors_cfg.get("skill_anchors", [
     "professional technical skill competency qualification",
     "industry domain expertise specialization knowledge area",
     "software tool platform technology methodology framework",
@@ -73,8 +93,8 @@ _SKILL_ANCHORS: List[str] = [
     "clinical medical pharmaceutical regulatory compliance procedure",
     "financial accounting legal contractual operational workflow",
     "creative design artistic production editorial publishing",
-]
-_GENERIC_ANCHORS: List[str] = [
+])
+_GENERIC_ANCHORS: List[str] = _anchors_cfg.get("generic_anchors", [
     "strong excellent great outstanding high-quality positive adjective",
     "good solid proven demonstrated required preferred desirable",
     "working leading managing building creating seeking looking",
@@ -84,21 +104,24 @@ _GENERIC_ANCHORS: List[str] = [
     "engineer developer analyst manager specialist consultant director",
     "company organization department division group unit",
     "vague generic filler phrase common english noun",
-]
-_GATE_MARGIN: float = -0.05
+])
+_GATE_MARGIN: float = _thresholds_cfg.get("gate_margin", -0.05)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# COSINE FALSE-POSITIVE BLOCKLIST
+# COSINE FALSE-POSITIVE BLOCKLIST (loaded from config/blocklist.json)
 # ─────────────────────────────────────────────────────────────────────────────
+_blocklist_cfg = _load_json("blocklist.json", {})
 _COSINE_BLOCKLIST: List[Tuple[str, str]] = [
-    ("react",       "angular"),   ("react",       "vue"),
-    ("angular",     "vue"),       ("docker",       "kubernetes"),
-    ("sql",         "nosql"),     ("sql",          "mongodb"),
-    ("mysql",       "postgresql"),("tensorflow",   "pytorch"),
-    ("supervised",  "unsupervised"),("frontend",   "backend"),
-    ("ios",         "android"),   ("swift",        "kotlin"),
-    ("java",        "javascript"),("javascript",   "typescript"),
-    ("mysql",       "nosql"),     ("postgresql",   "nosql"),
+    tuple(pair) for pair in _blocklist_cfg.get("blocklist", [
+        ["react", "angular"],    ["react", "vue"],
+        ["angular", "vue"],      ["docker", "kubernetes"],
+        ["sql", "nosql"],        ["sql", "mongodb"],
+        ["mysql", "postgresql"], ["tensorflow", "pytorch"],
+        ["supervised", "unsupervised"], ["frontend", "backend"],
+        ["ios", "android"],      ["swift", "kotlin"],
+        ["java", "javascript"],  ["javascript", "typescript"],
+        ["mysql", "nosql"],      ["postgresql", "nosql"],
+    ])
 ]
 
 def _is_blocked(a: str, b: str) -> bool:
@@ -146,23 +169,48 @@ def _build_stopwords() -> frozenset:
         "candidates","professional","professionals","lead","leads","owner",
         "owners","member","members","director","directors","officer",
         "ci","cd",
+        # Additional JD/resume noise — never standalone or compound skills
+        "roles","senior","title","date","location","name","type",
+        "submit","cover","letter","subject","line","offer","package",
+        "salary","benefits","competitive","flexible","remote","hybrid",
     })
     return frozenset(w.lower() for w in base)
 
 _STOPWORDS: frozenset = _build_stopwords()
 
 _GENERIC_SINGLE_NOUNS: frozenset = frozenset({
+    # Actions & processes
     "analysis","communication","management","development","planning",
     "testing","implementation","integration","deployment","monitoring",
     "optimization","maintenance","documentation","reporting","research",
     "leadership","collaboration","teamwork","coordination","supervision",
     "evaluation","assessment","review","support","training","consulting",
     "strategy","administration","execution","delivery","creation",
+    # Qualities & measures
     "performance","quality","efficiency","productivity","innovation","growth",
+    "reliability","scalability","availability","accessibility","security",
+    # Generic tech/business nouns
     "data","information","service","system","process","function","feature",
     "application","solution","platform","environment","structure","model",
     "approach","method","technique","practice","principle","concept",
     "standard","requirement","objective","goal","result","output",
+    # Generic English — never standalone skills
+    "job","attention","summary","prior","collect","develop","communicate",
+    "intelligence","company","work","results","science","computer",
+    "ability","detail","focus","impact","success","value","area","level",
+    "field","industry","sector","organization","business","project",
+    "design","build","create","use","run","set","end","part",
+    # JD noise (extracted from real-world JD test failures)
+    "access","achieve","achievements","adoption","apply","best",
+    "collaborate","collaborative","competitive","conceptualization",
+    "cover","date","drive","engagement","exposure","external","flexible",
+    "full","functionality","hands","hybrid","launch","letter","line",
+    "location","name","number","opportunities","oversee","record",
+    "remote","resume","role","roles","senior","subject","title","tools",
+    "track","translate","type","offer","package","salary","benefits",
+    # Verbs that slip through POS filter
+    "drive","driven","expect","submit","stay","measure","improve",
+    "optimize","enhance","ensure","maintain","manage","own","seek",
 })
 
 _TRIM_START: frozenset = frozenset({
@@ -170,14 +218,20 @@ _TRIM_START: frozenset = frozenset({
     "preferred","senior","junior","basic","advanced","minimum","maximum",
     "specific","clear","much","high","key","core","primary","general",
     "overall","broad","extensive","comprehensive","hands-on","in-depth",
+    # Fix 3: resume action verbs — strip from noun-chunk starts
+    "leveraged","utilized","managed","launched","implemented","led",
+    "grew","developed","built","created","streamlined","enhanced",
+    "generated","conducted","achieved","increased","reduced","improved",
+    "designed","established","delivered","secured","optimized","maintained",
+    "automated","configured","deployed","integrated","analyzed","performed",
 })
 _TRIM_END: frozenset = frozenset({
     "experience","knowledge","skills","skill","developer","developers",
     "engineer","engineers","specialist","analyst","analysts","architect",
     "architects","programmer","programmers","candidate","candidates",
     "methodology","methodologies","practices","principles","concepts",
-    "team","role","position","job","requirement","requirements","background",
-    "understanding","ability",
+    "team","role","roles","position","job","requirement","requirements","background",
+    "understanding","ability","performance","initiatives","strategies",
 })
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -227,22 +281,55 @@ def _load_gate():
     )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HARD-SIGNAL HELPERS
+# HARD-SIGNAL HELPERS  (Fix 1: require alpha chars alongside digits/symbols)
 # ─────────────────────────────────────────────────────────────────────────────
+def _count_alpha(word: str) -> int:
+    """Count alphabetic characters in a word."""
+    return sum(1 for c in word if c.isalpha())
+
+def _is_url_like(word: str) -> bool:
+    """Detect URL-like tokens: github.com, email.com, linkedin, etc."""
+    w = word.lower()
+    if re.search(r'\.(com|org|net|io|dev|ai|edu|gov|co)\b', w):
+        return True
+    if re.search(r'https?://', w):
+        return True
+    return False
+
 def _is_hard_signal(word: str) -> bool:
     if not word or " " in word:
         return False
-    if any(c.isdigit() for c in word):
+    # Reject URL-like tokens
+    if _is_url_like(word):
+        return False
+    # Reject pure numbers / number+symbol (123, 33%, 21)
+    if _count_alpha(word) < 2:
+        return False
+    # Digit embedded WITH alpha: OAuth2, ES6, GPT4, HTML5, C3, i2c
+    if any(c.isdigit() for c in word) and _count_alpha(word) >= 2:
         return True
-    if any(c in ("+", "#", "/", ".") for c in word):
+    # Special technical chars WITH alpha: C++, C#, CI/CD, .NET
+    if any(c in ("+", "#", "/") for c in word) and _count_alpha(word) >= 1:
         return True
+    # Dot-embedded WITH alpha: .NET, Node.js, ASP.NET (not e.g.)
+    if "." in word and _count_alpha(word) >= 3 and not re.match(r'^[a-z]\.[a-z]\.$', word.lower()):
+        return True
+    # ALL-CAPS acronym: REST, HTML, API, SQL, AWS
     if re.match(r"^[A-Z]{2,8}$", word):
         return True
+    # CamelCase: JavaScript, TypeScript, GraphQL
     if any(c.isupper() for c in word) and any(c.islower() for c in word):
         return True
     return False
 
 def _is_hard_bypass(word: str) -> bool:
+    """Hard bypass for the semantic gate — stricter than hard_signal."""
+    if not word or " " in word:
+        return False
+    if _is_url_like(word):
+        return False
+    if _count_alpha(word) < 2:
+        return False
     return _is_hard_signal(word)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -268,6 +355,35 @@ def _trim_chunk(tokens: list):
         return None
     return phrase
 
+def _is_noise_candidate(phrase: str) -> bool:
+    """Reject obviously non-skill candidates (Fix 1 post-mining filter)."""
+    p = phrase.strip()
+    if not p:
+        return True
+    # Pure numbers or number+symbol: 123, 33 %, 21, 7
+    if re.match(r'^[\d\s%.,]+$', p):
+        return True
+    # URL-like tokens
+    if _is_url_like(p):
+        return True
+    # Single/double digit tokens: "7", "21", "33"
+    if re.match(r'^\d{1,4}$', p.strip()):
+        return True
+    # Contains brackets or email-like patterns: "to [email address", "[Company Name]"
+    if any(c in p for c in '[]{}@'):
+        return True
+    # Multi-word: reject if >50% of words are pure numbers
+    words = p.split()
+    if len(words) >= 2:
+        num_count = sum(1 for w in words if re.match(r'^\d+[%]?$', w))
+        if num_count / len(words) > 0.5:
+            return True
+    # Reject single-char or 2-char fragments like "e.g."
+    clean = re.sub(r'[^a-zA-Z]', '', p)
+    if len(clean) < 2:
+        return True
+    return False
+
 def _mine_candidates(text: str) -> set:
     nlp = _get_nlp()
     candidates: set = set()
@@ -290,7 +406,7 @@ def _mine_candidates(text: str) -> set:
                 continue
             if tok.i in gpe_person_idx:
                 continue
-            if _is_hard_signal(t):
+            if _is_hard_signal(t) and not _is_noise_candidate(t):
                 candidates.add(t)
             elif tok.pos_ == "PROPN" and tok.i in ent_idx:
                 candidates.add(t)
@@ -303,12 +419,12 @@ def _mine_candidates(text: str) -> set:
             if chunk_span.text in skip_spans:
                 continue
             phrase = _trim_chunk(list(chunk_span))
-            if phrase:
+            if phrase and not _is_noise_candidate(phrase):
                 candidates.add(phrase)
         for ent in doc.ents:
             if ent.label_ in ("ORG", "PRODUCT", "WORK_OF_ART", "NORP"):
                 t = ent.text.strip()
-                if 2 <= len(t) <= 60:
+                if 2 <= len(t) <= 60 and not _is_noise_candidate(t):
                     candidates.add(t)
     return candidates
 
@@ -316,29 +432,35 @@ def _mine_candidates(text: str) -> set:
 # STAGE 1 — SEMANTIC GATE
 # ─────────────────────────────────────────────────────────────────────────────
 def _semantic_gate(candidates: set) -> set:
+    """Score candidates against skill/generic anchors. Fix 1: multi-word
+    phrases no longer auto-pass — they face the gate if they contain
+    only generic words."""
     if not candidates:
         return set()
     _load_gate()
     m = _get_model()
-    bypass   = {c for c in candidates if _is_hard_bypass(c) or _is_hard_signal(c)}
+    bypass   = {c for c in candidates if _is_hard_bypass(c)}
     to_score = [c for c in candidates if c not in bypass]
     passed   = set(bypass)
     if to_score:
-        single_to_score = []
+        # Multi-word candidates: only auto-pass if at least 1 non-generic,
+        # non-stopword content word remains after filtering
+        needs_scoring = []
         for cand in to_score:
-            words = [w for w in cand.lower().split() if w not in _STOPWORDS]
-            if len(words) >= 2:
+            words = [w for w in cand.lower().split()
+                     if w not in _STOPWORDS and w not in _GENERIC_SINGLE_NOUNS]
+            if len(words) >= 1:
                 passed.add(cand)
             else:
-                single_to_score.append(cand)
-        if single_to_score:
+                needs_scoring.append(cand)
+        if needs_scoring:
             embs           = m.encode(
-                single_to_score, normalize_embeddings=True,
+                needs_scoring, normalize_embeddings=True,
                 convert_to_numpy=True, show_progress_bar=False,
             )
             skill_scores   = (embs @ _skill_gate_embs.T).max(axis=1)
             generic_scores = (embs @ _generic_gate_embs.T).max(axis=1)
-            for cand, ss, gs in zip(single_to_score, skill_scores, generic_scores):
+            for cand, ss, gs in zip(needs_scoring, skill_scores, generic_scores):
                 if ss >= gs + _GATE_MARGIN:
                     passed.add(cand)
     return passed
@@ -350,6 +472,31 @@ def _normalize(s: str) -> str:
     s = s.lower().strip().strip(",;")
     s = re.sub(r"\s*([/\-.+#])\s*", r"\1", s)
     return re.sub(r"\s+", " ", s)
+
+def _token_set_dedup(skills: set) -> set:
+    """Fix 4: Remove skills that are token-permutation duplicates.
+    e.g. 'power power bi bi' and 'power bi' share ≥80% tokens → keep shorter."""
+    result: list = sorted(skills, key=len)  # shortest first
+    final: set = set()
+    for s in result:
+        s_tokens = set(s.lower().split())
+        if not s_tokens:
+            continue
+        is_dup = False
+        for existing in final:
+            e_tokens = set(existing.lower().split())
+            if not e_tokens:
+                continue
+            # Check if shorter is a token-subset of longer
+            smaller = s_tokens if len(s_tokens) <= len(e_tokens) else e_tokens
+            larger  = e_tokens if len(s_tokens) <= len(e_tokens) else s_tokens
+            overlap = len(smaller & larger) / len(smaller) if smaller else 0
+            if overlap >= 0.80:
+                is_dup = True
+                break
+        if not is_dup:
+            final.add(s)
+    return final
 
 def extract_skills(text: str) -> List[str]:
     raw    = _mine_candidates(text)
@@ -363,7 +510,13 @@ def extract_skills(text: str) -> List[str]:
             continue
         if len(n.split()) == 1 and n in _GENERIC_SINGLE_NOUNS:
             continue
+        # Fix 1: final noise filter
+        if _is_noise_candidate(n):
+            continue
         normalised.add(n)
+    # Fix 4: token-set dedup (removes 'power power bi bi' etc.)
+    normalised = _token_set_dedup(normalised)
+    # Substring dedup: remove skills that are substrings of longer ones
     result: set = set()
     for s in sorted(normalised, key=len, reverse=True):
         contained = any(

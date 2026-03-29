@@ -9,7 +9,7 @@ import traceback
 import streamlit as st
 
 st.set_page_config(
-    page_title="SkillBridge",
+    page_title="SkillBridge-AI Orchestrator",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -491,13 +491,13 @@ textarea:focus, input:focus {
 st.markdown("""
 <div class="sb-hero">
   <div class="sb-hero-left">
-    <div class="sb-eyebrow">Neural Career Intelligence</div>
-    <div class="sb-name">Skill<em>Bridge</em></div>
-    <div class="sb-sub">Next-generation offline skill-gap analysis framework</div>
+    <div class="sb-eyebrow">Enterprise Process Health Monitor</div>
+    <div class="sb-name">SkillBridge<em>-AI</em></div>
+    <div class="sb-sub">Autonomous Orchestrator & Agentic Workflow Engine</div>
   </div>
   <div style="display: flex; gap: 10px;">
-    <span class="sb-badge">Offline Native</span>
-    <span class="sb-badge">Zero API</span>
+    <span class="sb-badge">Multi-Agent</span>
+    <span class="sb-badge">Auditable</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -507,33 +507,38 @@ st.markdown("""
 with st.sidebar:
     st.markdown("""
         <div style="font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:700; color:#00F0FF; line-height:1.2;">
-            SkillBridge
+            SkillBridge-AI
         </div>
         <div style="font-family:'Inter',monospace; font-size:0.65rem; color:#94A3B8; letter-spacing:0.1em; margin-bottom: 10px;">
-            v6.2.0 • OFFLINE NATIVE
+            ET HACKATHON • ORCHESTRATOR
         </div>
         
         <div class="status-indicator">
             <div class="status-dot"></div>
-            <div class="status-text">Neural Engine: Online</div>
+            <div class="status-text">Workflow Health: Optimal</div>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="sidebar-header">Parameters</div>', unsafe_allow_html=True)
-    show_scores     = st.toggle("Show Match Diagnostics", value=True)
+    st.markdown('<div class="sidebar-header">Enterprise Config</div>', unsafe_allow_html=True)
+    show_scores     = st.toggle("Show Agent Diagnostics", value=True)
     show_raw_skills = st.toggle("Expose Raw Extractions", value=False)
 
-    st.markdown('<div class="sidebar-header">Data Pipeline</div>', unsafe_allow_html=True)
-    st.markdown("""
-        <div class="pipeline-container">
-            <div class="pipe-step active"><b>PDF Ingestion</b><br>via pdfplumber</div>
-            <div class="pipe-step active"><b>spaCy NLP</b><br>Noun Chunks + NER</div>
-            <div class="pipe-step active"><b>Semantic Gate</b><br>Zero-Shot Filter</div>
-            <div class="pipe-step active"><b>Vectorization</b><br>all-MiniLM-L6-v2</div>
-            <div class="pipe-step active"><b>Matrix Eval</b><br>Cosine Similarity</div>
-            <div class="pipe-step active" style="color: #00F0FF;"><b>7-Pass Classifier</b><br>Final Output Payload</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-header">Agentic Workflow</div>', unsafe_allow_html=True)
+
+    # Dynamic agent status from session state
+    agent_stats = st.session_state.get("agent_stats", {})
+    if agent_stats:
+        for agent_name, info in agent_stats.items():
+            status = info.get("status", "pending")
+            icon = {"complete": "✓", "running": "◌", "failed": "✗", "pending": "○"}.get(status, "○")
+            color = {"complete": "#00FFA3", "running": "#00F0FF", "failed": "#FF0055", "pending": "#94A3B8"}.get(status, "#94A3B8")
+            dur = info.get("duration_ms", 0)
+            dur_str = f" · {dur:.0f}ms" if dur > 0 else ""
+            st.markdown(f'<div class="pipe-step {"active" if status == "complete" else ""}" style="color:{color};"><b>{icon} {agent_name}</b><br>{status.upper()}{dur_str}</div>', unsafe_allow_html=True)
+    else:
+        agents_list = ["IngestionAgent", "ExtractionAgent", "AnalysisAgent", "RoutingDecision", "StrategyAgent", "ComplianceAgent"]
+        for a in agents_list:
+            st.markdown(f'<div class="pipe-step"><b>○ {a}</b><br>STANDBY</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-header">Optional Setup</div>', unsafe_allow_html=True)
     st.markdown("""
@@ -545,31 +550,21 @@ with st.sidebar:
 
     st.markdown("""
         <div class="sidebar-footer">
-            SYSTEM READY<br>
-            Awaiting Payload
+            WORKFLOW READY<br>
+            Awaiting Data Ingestion
         </div>
     """, unsafe_allow_html=True)
 
 
 # ── CACHE ─────────────────────────────────────────────────────────────────────
-_CACHE_VERSION = "v6.2"
+_CACHE_VERSION = "v7.0"
 
 @st.cache_resource(show_spinner="Booting neural models…")
 def _load(_ver: str = _CACHE_VERSION):
-    from pipeline import run_analysis, _get_nlp, _get_model
+    from pipeline import _get_nlp, _get_model
     _get_nlp()
     _get_model()
-    try:
-        from llm_client import get_llm_client
-        llm = get_llm_client()
-    except Exception:
-        llm = None
-    try:
-        from rag_engine import get_rag_engine
-        rag = get_rag_engine()
-    except Exception:
-        rag = None
-    return run_analysis, llm, rag
+    return True
 
 
 # ── PASS HELPERS ──────────────────────────────────────────────────────────────
@@ -601,7 +596,7 @@ def _skill_tag(skill: str, kind: str, score_info: dict | None, show: bool) -> st
 
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
-tab_main, tab_matrix, tab_about = st.tabs(["Analysis Hub", "Vector Matrix", "System Config"])
+tab_main, tab_matrix, tab_audit, tab_about = st.tabs(["Autonomous Output", "Agent Collaboration", "Compliance Audit", "Process Architecture"])
 
 
 # ════════════════════════════════════════════════════════════════════════════════
@@ -617,28 +612,29 @@ with tab_main:
 
     col_l, col_r = st.columns(2, gap="large")
     with col_l:
-        st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; color:#94A3B8; margin-bottom:8px; font-size:0.9rem;">Candidate Resume (PDF)</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; color:#94A3B8; margin-bottom:8px; font-size:0.9rem;">Enterprise Candidate Payload (PDF)</div>', unsafe_allow_html=True)
         pdf_file = st.file_uploader("resume", type=["pdf"], label_visibility="collapsed")
     with col_r:
-        st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; color:#94A3B8; margin-bottom:8px; font-size:0.9rem;">Target Job Description</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; color:#94A3B8; margin-bottom:8px; font-size:0.9rem;">Target Process Requirements (JD)</div>', unsafe_allow_html=True)
         jd_text = st.text_area("jd", height=120,
-            placeholder="Paste raw JD text here...",
+            placeholder="Paste raw process requirements or JD text here...",
             label_visibility="collapsed")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    run_btn = st.button("Initialize Scan", type="primary", use_container_width=True)
+    run_btn = st.button("Execute Autonomous Pipeline", type="primary", use_container_width=True)
 
     if run_btn:
         if not pdf_file:
-            st.error("Missing candidate payload (PDF).")
+            st.error("Missing Enterprise Candidate Payload (PDF).")
             st.stop()
         if not jd_text.strip():
-            st.error("Missing target JD payload.")
+            st.error("Missing Target Process Requirements payload.")
             st.stop()
-        with st.spinner("Executing neural pipeline…"):
-            run_analysis, llm, rag = _load(_CACHE_VERSION)
+        with st.spinner("Orchestrating multi-agent workflow…"):
+            _load(_CACHE_VERSION)
             try:
-                result = run_analysis(pdf_file.read(), jd_text)
+                from agent_orchestrator import run_agentic_analysis
+                result = run_agentic_analysis(pdf_file.read(), jd_text)
             except ValueError as e:
                 st.error(str(e)); st.stop()
             except Exception as e:
@@ -646,14 +642,18 @@ with tab_main:
                 with st.expander("System Traceback"):
                     st.code(traceback.format_exc(), language="python")
                 st.stop()
-        st.session_state.update({"result": result, "llm": llm, "rag": rag})
+        st.session_state.update({
+            "result": result,
+            "audit_trail": result.get("audit_trail", ""),
+            "audit_json": result.get("audit_json", ""),
+            "agent_stats": result.get("agent_stats", {}),
+        })
+        st.rerun()
 
 
     # ── Results
     if "result" in st.session_state:
         result  = st.session_state["result"]
-        llm     = st.session_state.get("llm")
-        rag     = st.session_state.get("rag")
         matched = result["matched_skills"]
         missing = result["missing_skills"]
         jd_sk   = result["jd_skills"]
@@ -671,7 +671,20 @@ with tab_main:
 
         g_col, m1, m2, m3 = st.columns([2.5, 1, 1, 1], gap="medium")
 
-        verdict = "Optimal Fit" if pct >= 70 else ("Viable Fit" if pct >= 40 else "Low Fit")
+        route = result.get("route_taken", "strategy")
+        fast_tracked = result.get("fast_tracked", False)
+        redirected = result.get("redirected", False)
+
+        if fast_tracked:
+            verdict = "⚡ Fast Track"
+        elif redirected:
+            verdict = "🔀 Redirected"
+        elif pct >= 70:
+            verdict = "Optimal Fit"
+        elif pct >= 40:
+            verdict = "Viable Fit"
+        else:
+            verdict = "Low Fit"
         bar_color = "var(--emerald)" if pct >= 70 else ("var(--cyan)" if pct >= 40 else "var(--rose)")
         v_color = "#00FFA3" if pct >= 70 else ("#00F0FF" if pct >= 40 else "#FF0055")
 
@@ -696,7 +709,7 @@ with tab_main:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("""<div class="sec-head">
   <span class="sec-num">3</span>
-  <span class="sec-title">Gap Analysis</span>
+  <span class="sec-title">Autonomous Screening Outcome</span>
   <span class="sec-rule"></span>
 </div>""", unsafe_allow_html=True)
 
@@ -721,7 +734,7 @@ with tab_main:
                 st.markdown(f"""
 <div class="skills-panel">
   <div class="skills-panel-head rose">
-    <span class="skills-panel-head-label">Identified Deficits</span>
+    <span class="skills-panel-head-label">Identified Process Deficits</span>
     <span class="skills-panel-count" style="color:var(--rose)">{len(missing)}</span>
   </div>
   <div class="skills-panel-body">
@@ -738,26 +751,57 @@ with tab_main:
 </div>""", unsafe_allow_html=True)
 
 
-        # ── Section 04: Career Intelligence
-        if missing and llm:
+        # ── Section 04: Agent-Generated Intelligence
+        advice = result.get("career_advice")
+        if advice:
             st.markdown("<br><br>", unsafe_allow_html=True)
-            st.markdown("""<div class="sec-head">
+
+            # Dynamic section title based on route
+            if fast_tracked:
+                sec_title = "⚡ Fast Track — Interview Readiness"
+            elif redirected:
+                sec_title = "🔀 Career Redirect — Alternative Paths"
+            else:
+                sec_title = "Synthesized Strategy"
+
+            st.markdown(f"""<div class="sec-head">
   <span class="sec-num">4</span>
-  <span class="sec-title">Synthesized Strategy</span>
+  <span class="sec-title">{sec_title}</span>
   <span class="sec-rule"></span>
 </div>""", unsafe_allow_html=True)
 
-            with st.spinner("Generating LLM strategy…"):
-                try:
-                    contexts = rag.get_context_for_missing_skills(missing[:5]) if rag else []
-                    advice   = llm.generate_career_advice(
-                        matched_skills=matched, missing_skills=missing,
-                        skill_contexts=contexts, job_description=jd_text)
-                except Exception as e:
-                    st.warning(f"Synthesis offline: {e}")
-                    advice = None
+            # FastTrack report
+            if fast_tracked:
+                st.markdown(f'<div class="adv-summary" style="border-left:3px solid var(--emerald);">{advice.get("recommendation", "")}</div>', unsafe_allow_html=True)
+                if advice.get("strengths"):
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; font-size:1.1rem; color:var(--emerald); margin-bottom:15px;">Key Strengths</div>', unsafe_allow_html=True)
+                    for s in advice["strengths"]:
+                        st.markdown(f'<div class="plan-item"><span style="color:var(--emerald); margin-right:8px;">✦</span>{s}</div>', unsafe_allow_html=True)
+                if advice.get("interview_prep"):
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; font-size:1.1rem; color:var(--cyan); margin-bottom:15px;">Interview Preparation</div>', unsafe_allow_html=True)
+                    for tip in advice["interview_prep"]:
+                        st.markdown(f'<div class="plan-item"><span style="color:var(--cyan); margin-right:8px;">▹</span>{tip}</div>', unsafe_allow_html=True)
 
-            if advice:
+            # Redirect report
+            elif redirected:
+                st.markdown(f'<div class="adv-summary" style="border-left:3px solid var(--rose);">{advice.get("current_match_summary", "")}</div>', unsafe_allow_html=True)
+                if advice.get("alternative_roles"):
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown('<div style="font-family:\'Space Grotesk\',sans-serif; font-size:1.1rem; color:var(--violet); margin-bottom:15px;">Recommended Alternative Roles</div>', unsafe_allow_html=True)
+                    for role_info in advice["alternative_roles"][:5]:
+                        role = role_info.get("role", "")
+                        rec = role_info.get("recommendation", "")
+                        skills = role_info.get("supporting_skills", [])
+                        with st.expander(f"◈ {role}"):
+                            st.markdown(rec)
+                            if skills:
+                                st.markdown("**Supporting skills:** " + " · ".join(f"`{s}`" for s in skills))
+                st.markdown(f'<div class="adv-summary" style="border-left:3px solid var(--violet); margin-top:20px;">{advice.get("recommendation", "")}</div>', unsafe_allow_html=True)
+
+            # Standard strategy report
+            else:
                 if advice.get("career_summary"):
                     st.markdown(f'<div class="adv-summary">{advice["career_summary"]}</div>', unsafe_allow_html=True)
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -821,8 +865,8 @@ with tab_matrix:
         res_sk = result["resume_skills"]
 
         st.markdown(f"""<div style="display:flex; gap:30px; margin-bottom:20px; font-family:'Inter',monospace; font-size:0.8rem; color:#94A3B8;">
-  <span>JD Vectors: <strong style="color:var(--cyan)">{len(jd_sk)}</strong></span>
-  <span>Resume Vectors: <strong style="color:var(--cyan)">{len(res_sk)}</strong></span>
+  <span>Process Requirement Vectors: <strong style="color:var(--cyan)">{len(jd_sk)}</strong></span>
+  <span>Candidate Payload Vectors: <strong style="color:var(--cyan)">{len(res_sk)}</strong></span>
   <span>Activation Threshold: <strong style="color:var(--cyan)">0.65</strong></span>
 </div>""", unsafe_allow_html=True)
 
@@ -851,14 +895,63 @@ with tab_matrix:
 
 
 # ════════════════════════════════════════════════════════════════════════════════
-# TAB 3 — ABOUT
+# TAB 3 — AUDIT TRAIL
+# ════════════════════════════════════════════════════════════════════════════════
+with tab_audit:
+    if "audit_trail" not in st.session_state:
+        st.info("Execute autonomous pipeline to view the immutable agent audit trail. Every exception handled and routing choice will be logged here.")
+    else:
+        st.markdown("""<div class="sec-head">
+  <span class="sec-num">A</span>
+  <span class="sec-title">Agent Decision Log</span>
+  <span class="sec-rule"></span>
+</div>""", unsafe_allow_html=True)
+
+        # Agent status dashboard
+        agent_stats = st.session_state.get("agent_stats", {})
+        if agent_stats:
+            cols = st.columns(min(len(agent_stats), 4))
+            for i, (name, info) in enumerate(agent_stats.items()):
+                with cols[i % 4]:
+                    status = info.get("status", "pending")
+                    color = {"complete": "#00FFA3", "running": "#00F0FF", "failed": "#FF0055"}.get(status, "#94A3B8")
+                    st.markdown(f"""
+<div style="background:var(--bg-panel); border:1px solid var(--border-subtle); border-radius:var(--r2); padding:16px; text-align:center;">
+  <div style="font-family:'Space Grotesk',sans-serif; font-size:0.75rem; color:#94A3B8; letter-spacing:0.1em; text-transform:uppercase;">{name}</div>
+  <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem; color:{color}; margin-top:6px;">{status.upper()}</div>
+  <div style="font-family:'Inter',monospace; font-size:0.7rem; color:#94A3B8; margin-top:4px;">{info.get('decisions',0)} decisions · {info.get('duration_ms',0):.0f}ms</div>
+</div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Human-readable audit trail
+        audit_text = st.session_state.get("audit_trail", "")
+        st.code(audit_text, language="text")
+
+        # Downloadable JSON
+        audit_json = st.session_state.get("audit_json", "")
+        if audit_json:
+            st.download_button(
+                "Download Full Audit (JSON)",
+                audit_json,
+                file_name="audit_trail.json",
+                mime="application/json",
+            )
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# TAB 4 — SYSTEM CONFIG
 # ════════════════════════════════════════════════════════════════════════════════
 with tab_about:
-    st.markdown("### System Architecture")
-    st.code("""Payload (PDF) → pdfplumber
-  └─ spaCy NLP Pipeline
-  └─ Semantic Gating (Zero-Shot)
-  └─ all-MiniLM-L6-v2 Embeddings
-  └─ n-Dimensional Vector Matrix
-  └─ 7-Pass Neural Classifier
-  └─ Synthesized LLM Strategy Output""", language="text")
+    st.markdown("### Agentic Architecture")
+    st.code("""Payload (PDF)
+  └─ IngestionAgent (pdfplumber + OCR fallback)
+  └─ ExtractionAgent (spaCy NLP + Semantic Gate)
+  └─ AnalysisAgent (7-Pass Classifier + Implication Engine)
+  └─ ⇒ ROUTING DECISION
+      ├─ >90%  → FastTrackAgent (Interview Readiness)
+      ├─ 40-90% → StrategyAgent (Career Plan)
+      └─ <40%  → RedirectAgent (Alt Roles)
+  └─ ComplianceAgent (Bias/Hallucination Check)
+  └─ ↺ Self-Correction Loop (if compliance fails)
+  └─ Final Report""", language="text")

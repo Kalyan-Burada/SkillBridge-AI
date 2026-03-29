@@ -1,0 +1,28 @@
+{
+    "skill_anchors": [
+        "professional technical skill competency qualification",
+        "industry domain expertise specialization knowledge area",
+        "software tool platform technology methodology framework",
+        "certification credential license standard protocol specification",
+        "analytical quantitative data-driven computational capability",
+        "engineering scientific technical discipline subject matter",
+        "required proficiency hands-on working knowledge",
+        "technical implementation deployment operation administration",
+        "programming scripting automation orchestration integration",
+        "management planning strategy execution governance leadership process",
+        "clinical medical pharmaceutical regulatory compliance procedure",
+        "financial accounting legal contractual operational workflow",
+        "creative design artistic production editorial publishing"
+    ],
+    "generic_anchors": [
+        "strong excellent great outstanding high-quality positive adjective",
+        "good solid proven demonstrated required preferred desirable",
+        "working leading managing building creating seeking looking",
+        "responsible passionate driven collaborative motivated enthusiastic",
+        "years months experience background history track record tenure",
+        "team communication interpersonal stakeholder reporting structure",
+        "engineer developer analyst manager specialist consultant director",
+        "company organization department division group unit",
+        "vague generic filler phrase common english noun"
+    ]
+}
