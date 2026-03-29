@@ -3,6 +3,7 @@
 
 # ── Core NLP & ML ─────────────────────────────────────────────────────────────
 spacy>=3.7.0,<4.0.0                  # NLP pipeline for skill extraction
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz#egg=en_core_web_sm
 sentence-transformers>=2.7.0,<4.0.0  # all-MiniLM-L6-v2 embedding model
 numpy>=1.24.0,<3.0.0                 # matrix math / cosine similarity
 faiss-cpu>=1.7.4                     # FAISS vector index (RAG engine)
